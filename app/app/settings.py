@@ -65,8 +65,7 @@ WSGI_APPLICATION = 'app.wsgi.application'
 
 DATABASES = {
     'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': '/tmp/db.sqlite3',
+        'ENGINE': 'django.db.backends.dummy',
     }
 }
 
@@ -97,10 +96,6 @@ MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
-
-
-# Evita escribir sesiones en la base de datos
+# Asegúrate de mantener estas líneas que ya tienes para evitar errores de escritura
 SESSION_ENGINE = 'django.contrib.sessions.backends.signed_cookies'
-
-# Evita escribir mensajes en la base de datos (usa almacenamiento de sesión que ahora son cookies)
 MESSAGE_STORAGE = 'django.contrib.messages.storage.session.SessionStorage'
