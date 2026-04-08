@@ -96,3 +96,11 @@ MEDIA_URL = '/media/'
 MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+
+
+
+# Evita escribir sesiones en la base de datos
+SESSION_ENGINE = 'django.contrib.sessions.backends.signed_cookies'
+
+# Evita escribir mensajes en la base de datos (usa almacenamiento de sesión que ahora son cookies)
+MESSAGE_STORAGE = 'django.contrib.messages.storage.session.SessionStorage'
