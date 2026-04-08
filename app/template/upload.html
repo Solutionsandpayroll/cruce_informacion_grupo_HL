@@ -1,0 +1,528 @@
+{% load static %}
+
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>INFRA Processor</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Nunito+Sans:wght@400;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --azul-oscuro: #162b47;
+            --azul-medio: #105788;
+            --rojo: #e51148;
+            --gris: #e0e5e5;
+            --blanco: #ffffff;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+
+        body {
+            font-family: 'Nunito Sans', Calibri, Tahoma, sans-serif;
+            background: var(--gris);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* ── HEADER ── */
+        header {
+            background: var(--azul-oscuro);
+            padding: 0 40px;
+            height: 68px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            box-shadow: 0 2px 12px rgba(22,43,71,0.4);
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+
+        .header-logo {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            text-decoration: none;
+        }
+
+        .header-logo img {
+            height: 40px;
+            width: auto;
+            object-fit: contain;
+            border-radius: 6px;
+        }
+
+        .header-title {
+            font-family: 'Nunito Sans', sans-serif;
+            font-weight: 700;
+            font-size: 17px;
+            color: var(--blanco);
+            letter-spacing: 0.3px;
+            line-height: 1.2;
+        }
+
+        .header-title span {
+            display: block;
+            font-weight: 600;
+            font-size: 11px;
+            color: rgba(255,255,255,0.55);
+            letter-spacing: 1.5px;
+            text-transform: uppercase;
+            margin-top: 1px;
+        }
+
+        .header-divider {
+            width: 1px;
+            height: 32px;
+            background: rgba(255,255,255,0.18);
+        }
+
+        /* ── MAIN CONTENT ── */
+        main {
+            flex: 1;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 40px 20px;
+        }
+
+        .container {
+            background: white;
+            padding: 44px 40px 36px;
+            border-radius: 20px;
+            box-shadow: 0 12px 40px rgba(22,43,71,0.12);
+            width: 100%;
+            max-width: 500px;
+            text-align: center;
+        }
+
+        .container h2 {
+            font-family: 'Nunito Sans', sans-serif;
+            font-weight: 700;
+            font-size: 20px;
+            color: var(--azul-oscuro);
+            margin-bottom: 28px;
+            letter-spacing: 0.2px;
+        }
+
+        /* ── GRUPOS DE ARCHIVO ── */
+        .file-group {
+            margin-bottom: 18px;
+            text-align: left;
+        }
+
+        .file-group-label {
+            font-size: 12px;
+            font-weight: 700;
+            color: var(--azul-oscuro);
+            letter-spacing: 0.4px;
+            text-transform: uppercase;
+            margin-bottom: 8px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .file-group-label i {
+            color: var(--azul-medio);
+            font-size: 13px;
+        }
+
+        /* ── FILE UPLOAD AREA ── */
+        .file-upload {
+            border: 2px dashed #c5cfd8;
+            padding: 22px 20px;
+            border-radius: 14px;
+            cursor: pointer;
+            transition: all 0.35s cubic-bezier(.4,0,.2,1);
+            display: block;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .file-upload:hover {
+            border-color: var(--azul-medio);
+            background: #f0f6fc;
+        }
+
+        .file-upload.has-file {
+            padding: 14px 16px;
+            border-color: var(--azul-medio);
+            background: #f0f6fc;
+        }
+
+        /* Estado vacío */
+        .upload-empty {
+            transition: all 0.35s ease;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .upload-empty i {
+            font-size: 32px;
+            color: var(--azul-medio);
+            margin-bottom: 3px;
+            transition: transform 0.3s ease;
+        }
+
+        .file-upload:hover .upload-empty i {
+            transform: translateY(-3px);
+        }
+
+        .upload-empty .label-principal {
+            font-weight: 700;
+            color: var(--azul-oscuro);
+            font-size: 13px;
+        }
+
+        .upload-empty .label-sub {
+            font-size: 11px;
+            color: #94a3b8;
+        }
+
+        /* Estado con archivo */
+        .upload-loaded {
+            display: none;
+            align-items: center;
+            gap: 12px;
+            text-align: left;
+            width: 100%;
+        }
+
+        .file-upload.has-file .upload-empty { display: none; }
+        .file-upload.has-file .upload-loaded { display: flex; }
+
+        .file-icon-small {
+            color: var(--azul-medio);
+            font-size: 22px;
+            flex-shrink: 0;
+        }
+
+        .file-name-text {
+            flex: 1;
+            font-size: 13px;
+            font-weight: 700;
+            color: var(--azul-oscuro);
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            min-width: 0;
+        }
+
+        .file-name-text span {
+            display: block;
+            font-size: 11px;
+            font-weight: 400;
+            color: #94a3b8;
+            margin-top: 1px;
+        }
+
+        /* ── Animación check ── */
+        .check-anim {
+            width: 36px;
+            height: 36px;
+            flex-shrink: 0;
+            position: relative;
+        }
+
+        .check-circle {
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            background: #ecfdf5;
+            border: 2.5px solid #10b981;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            animation: popIn 0.45s cubic-bezier(.34,1.56,.64,1) both;
+        }
+
+        .check-circle i {
+            color: #10b981;
+            font-size: 15px;
+            animation: fadeSlideIn 0.3s 0.25s ease both;
+            opacity: 0;
+        }
+
+        @keyframes popIn {
+            0%   { transform: scale(0); opacity: 0; }
+            100% { transform: scale(1); opacity: 1; }
+        }
+
+        @keyframes fadeSlideIn {
+            0%   { opacity: 0; transform: scale(0.5); }
+            100% { opacity: 1; transform: scale(1); }
+        }
+
+        /* ── BOTÓN ── */
+        .btn-subir {
+            width: 100%;
+            padding: 14px;
+            background: var(--azul-oscuro);
+            color: white;
+            border: none;
+            border-radius: 10px;
+            font-family: 'Nunito Sans', sans-serif;
+            font-weight: 700;
+            font-size: 14px;
+            cursor: pointer;
+            letter-spacing: 0.3px;
+            transition: background 0.25s, transform 0.15s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            margin-top: 8px;
+        }
+
+        .btn-subir:hover { background: var(--azul-medio); }
+        .btn-subir:active { transform: scale(0.98); }
+
+        input[type="file"] { display: none; }
+
+        /* ── INFO ── */
+        .info-bar {
+            margin-top: 18px;
+            background: #f0f6fc;
+            border-radius: 10px;
+            padding: 10px 14px;
+            font-size: 12px;
+            color: var(--azul-medio);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            text-align: left;
+        }
+
+        .info-bar i { flex-shrink: 0; font-size: 14px; }
+
+        /* ── ALERTA ── */
+        #alerta-overlay {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            display: none; justify-content: center; align-items: center;
+            z-index: 10000; background: rgba(22,43,71,0.45);
+            backdrop-filter: blur(4px);
+        }
+
+        .alerta-card {
+            background: white; padding: 35px; width: 320px;
+            border-radius: 24px; text-align: center;
+            box-shadow: 0 20px 50px rgba(0,0,0,0.15);
+            animation: entrada 0.4s ease-out;
+        }
+
+        .alerta-card.error { border-top: 7px solid var(--rojo); }
+
+        .alerta-card i {
+            font-size: 50px; margin-bottom: 15px;
+            color: var(--rojo);
+        }
+
+        .alerta-card h3 {
+            font-family: 'Nunito Sans', sans-serif;
+            font-weight: 700;
+            color: var(--azul-oscuro);
+            margin-bottom: 10px;
+        }
+
+        .alerta-card p {
+            font-size: 14px;
+            color: #64748b;
+            line-height: 1.5;
+        }
+
+        @keyframes entrada {
+            from { transform: scale(0.7); opacity: 0; }
+            to   { transform: scale(1);   opacity: 1; }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- ═══════════════ HEADER ═══════════════ -->
+    <header>
+        <div class="header-logo">
+            <img src="{% static 'img/logo_fondo_oscuro.png' %}" alt="Logo" style="height:80px;">
+            <div class="header-divider"></div>
+            <div class="header-title">
+                CARGA DE ARCHIVOS DE INFORMACIÓN ARL - GRUPO HL
+                <span>Gestión Documental</span>
+            </div>
+        </div>
+    </header>
+
+    <!-- ═══════════════ MAIN ═══════════════ -->
+    <main>
+        <div class="container">
+            <h2>Cargar Archivos Excel</h2>
+
+            <form method="post" enctype="multipart/form-data" id="form-subir">
+                {% csrf_token %}
+
+                <!-- Archivo 1: Reporte Libra -->
+                <div class="file-group">
+                    <div class="file-group-label">
+                        <i class="fa-solid fa-chart-bar"></i>
+                        Reporte de empleados Libra
+                    </div>
+                    <label class="file-upload" for="reporte" id="drop-area-reporte">
+                        <div class="upload-empty">
+                            <i class="fa-solid fa-file-excel"></i>
+                            <div class="label-principal">Haz clic para buscar archivo</div>
+                            <div class="label-sub">Formato aceptado: .xlsx</div>
+                        </div>
+                        <div class="upload-loaded">
+                            <i class="fa-solid fa-file-excel file-icon-small"></i>
+                            <div class="file-name-text">
+                                <span id="nombre-reporte"></span>
+                                <span id="size-reporte"></span>
+                            </div>
+                            <div class="check-anim" id="check-reporte" style="display:none;">
+                                <div class="check-circle"><i class="fa-solid fa-check"></i></div>
+                            </div>
+                        </div>
+                    </label>
+                    <input type="file" name="reporte" id="reporte" accept=".xlsx" required>
+                </div>
+
+                <!-- Archivo 2: Trabajadores Vigentes -->
+                <div class="file-group">
+                    <div class="file-group-label">
+                        <i class="fa-solid fa-users"></i>
+                        Trabajadores Vigentes
+                    </div>
+                    <label class="file-upload" for="trabajadores" id="drop-area-trabajadores">
+                        <div class="upload-empty">
+                            <i class="fa-solid fa-file-excel"></i>
+                            <div class="label-principal">Haz clic para buscar archivo</div>
+                            <div class="label-sub">Formato aceptado: .xlsx</div>
+                        </div>
+                        <div class="upload-loaded">
+                            <i class="fa-solid fa-file-excel file-icon-small"></i>
+                            <div class="file-name-text">
+                                <span id="nombre-trabajadores"></span>
+                                <span id="size-trabajadores"></span>
+                            </div>
+                            <div class="check-anim" id="check-trabajadores" style="display:none;">
+                                <div class="check-circle"><i class="fa-solid fa-check"></i></div>
+                            </div>
+                        </div>
+                    </label>
+                    <input type="file" name="trabajadores" id="trabajadores" accept=".xlsx" required>
+                </div>
+
+                <!-- Archivo 3: INFRA base -->
+                <div class="file-group">
+                    <div class="file-group-label">
+                        <i class="fa-solid fa-file-lines"></i>
+                        INFRA base
+                    </div>
+                    <label class="file-upload" for="infra" id="drop-area-infra">
+                        <div class="upload-empty">
+                            <i class="fa-solid fa-file-excel"></i>
+                            <div class="label-principal">Haz clic para buscar archivo</div>
+                            <div class="label-sub">Formato aceptado: .xlsx</div>
+                        </div>
+                        <div class="upload-loaded">
+                            <i class="fa-solid fa-file-excel file-icon-small"></i>
+                            <div class="file-name-text">
+                                <span id="nombre-infra"></span>
+                                <span id="size-infra"></span>
+                            </div>
+                            <div class="check-anim" id="check-infra" style="display:none;">
+                                <div class="check-circle"><i class="fa-solid fa-check"></i></div>
+                            </div>
+                        </div>
+                    </label>
+                    <input type="file" name="infra" id="infra" accept=".xlsx" required>
+                </div>
+
+                <button type="submit" class="btn-subir" id="btn-procesar">
+                    <i class="fa-solid fa-cloud-arrow-up"></i>
+                    Procesar Archivos
+                </button>
+            </form>
+
+            <div class="info-bar">
+                <i class="fa-solid fa-circle-info"></i>
+                Los archivos deben estar en formato Excel (.xlsx). El proceso puede tomar algunos segundos.
+            </div>
+        </div>
+    </main>
+
+    <!-- ═══════════════ ALERTA ═══════════════ -->
+    <div id="alerta-overlay"><div id="alerta-content"></div></div>
+
+    <!-- Mensajes Django -->
+    <div id="django-messages" style="display: none;">
+        {% if errors %}
+            {% for error in errors %}
+                <span class="msg" data-tag="error" data-content="{{ error }}"></span>
+            {% endfor %}
+        {% endif %}
+    </div>
+
+    <script>
+        // ── Función genérica para manejar selección de archivo ──
+        function setupFileInput(inputId, dropAreaId, nombreId, sizeId, checkId) {
+            document.getElementById(inputId).addEventListener('change', function () {
+                if (this.files.length > 0) {
+                    const file = this.files[0];
+                    const dropArea = document.getElementById(dropAreaId);
+
+                    document.getElementById(nombreId).textContent = file.name;
+
+                    const kb = (file.size / 1024).toFixed(1);
+                    const size = kb > 1024 ? (kb / 1024).toFixed(2) + ' MB' : kb + ' KB';
+                    document.getElementById(sizeId).textContent = size;
+
+                    dropArea.classList.add('has-file');
+
+                    const checkContainer = document.getElementById(checkId);
+                    checkContainer.style.display = 'block';
+                    const circle = checkContainer.querySelector('.check-circle');
+                    circle.style.animation = 'none';
+                    circle.querySelector('i').style.animation = 'none';
+                    void circle.offsetWidth;
+                    circle.style.animation = '';
+                    circle.querySelector('i').style.animation = '';
+                }
+            });
+        }
+
+        setupFileInput('reporte',      'drop-area-reporte',      'nombre-reporte',      'size-reporte',      'check-reporte');
+        setupFileInput('trabajadores', 'drop-area-trabajadores', 'nombre-trabajadores', 'size-trabajadores', 'check-trabajadores');
+        setupFileInput('infra',        'drop-area-infra',        'nombre-infra',        'size-infra',        'check-infra');
+
+        // ── Submit spinner ──
+        document.getElementById('form-subir').onsubmit = function () {
+            document.getElementById('btn-procesar').innerHTML =
+                '<i class="fas fa-spinner fa-spin"></i> Procesando...';
+        };
+
+        // ── Alertas de Django ──
+        function lanzarAlerta(mensaje) {
+            const overlay = document.getElementById('alerta-overlay');
+            document.getElementById('alerta-content').innerHTML = `
+                <div class="alerta-card error">
+                    <i class="fa-solid fa-circle-xmark"></i>
+                    <h3>Atención</h3>
+                    <p>${mensaje}</p>
+                </div>`;
+            overlay.style.display = 'flex';
+            overlay.onclick = () => overlay.style.display = 'none';
+        }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            document.querySelectorAll('.msg').forEach(m => {
+                if (m.dataset.tag.includes('error')) lanzarAlerta(m.dataset.content);
+            });
+        });
+    </script>
+</body>
+</html>

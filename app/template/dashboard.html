@@ -1,0 +1,572 @@
+{% load static %}
+
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard - INFRA Processor</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Nunito+Sans:wght@400;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --azul-oscuro: #162b47;
+            --azul-medio: #105788;
+            --rojo: #e51148;
+            --gris: #e0e5e5;
+            --blanco: #ffffff;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+
+        body {
+            font-family: 'Nunito Sans', Calibri, Tahoma, sans-serif;
+            background: var(--gris);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* ── HEADER ── */
+        header {
+            background: var(--azul-oscuro);
+            padding: 0 40px;
+            height: 68px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            box-shadow: 0 2px 12px rgba(22,43,71,0.4);
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+
+        .header-logo {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            text-decoration: none;
+        }
+
+        .header-logo img {
+            height: 40px;
+            width: auto;
+            object-fit: contain;
+            border-radius: 6px;
+        }
+
+        .header-title {
+            font-family: 'Nunito Sans', sans-serif;
+            font-weight: 700;
+            font-size: 17px;
+            color: var(--blanco);
+            letter-spacing: 0.3px;
+            line-height: 1.2;
+        }
+
+        .header-title span {
+            display: block;
+            font-weight: 600;
+            font-size: 11px;
+            color: rgba(255,255,255,0.55);
+            letter-spacing: 1.5px;
+            text-transform: uppercase;
+            margin-top: 1px;
+        }
+
+        .header-divider {
+            width: 1px;
+            height: 32px;
+            background: rgba(255,255,255,0.18);
+        }
+
+        /* ── MAIN ── */
+        main {
+            flex: 1;
+            padding: 32px 28px;
+            max-width: 1500px;
+            margin: 0 auto;
+            width: 100%;
+        }
+
+        /* ── STATS ── */
+        .stats-row {
+            display: flex;
+            gap: 18px;
+            margin-bottom: 24px;
+        }
+
+        .stat-card {
+            background: white;
+            border-radius: 14px;
+            padding: 20px 28px;
+            flex: 1;
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            box-shadow: 0 4px 18px rgba(22,43,71,0.08);
+        }
+
+        .stat-icon {
+            width: 48px;
+            height: 48px;
+            border-radius: 12px;
+            background: #eef4fb;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+        }
+
+        .stat-icon i {
+            font-size: 20px;
+            color: var(--azul-medio);
+        }
+
+        .stat-info {}
+
+        .stat-number {
+            font-size: 26px;
+            font-weight: 700;
+            color: var(--azul-oscuro);
+            line-height: 1;
+        }
+
+        .stat-label {
+            font-size: 12px;
+            color: #94a3b8;
+            margin-top: 4px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        /* ── PANEL PRINCIPAL ── */
+        .panel {
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 12px 40px rgba(22,43,71,0.10);
+            overflow: hidden;
+        }
+
+        /* ── TABS ── */
+        .tabs-bar {
+            display: flex;
+            border-bottom: 2px solid var(--gris);
+            padding: 0 28px;
+            background: white;
+        }
+
+        .tab-btn {
+            padding: 18px 22px;
+            font-family: 'Nunito Sans', sans-serif;
+            font-weight: 700;
+            font-size: 13px;
+            color: #94a3b8;
+            border: none;
+            background: none;
+            cursor: pointer;
+            border-bottom: 3px solid transparent;
+            margin-bottom: -2px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            transition: color 0.2s, border-color 0.2s;
+            letter-spacing: 0.3px;
+        }
+
+        .tab-btn i { font-size: 14px; }
+
+        .tab-btn:hover { color: var(--azul-medio); }
+
+        .tab-btn.active {
+            color: var(--azul-oscuro);
+            border-bottom-color: var(--azul-medio);
+        }
+
+        .tab-badge {
+            background: #eef4fb;
+            color: var(--azul-medio);
+            border-radius: 20px;
+            padding: 2px 9px;
+            font-size: 11px;
+            font-weight: 700;
+        }
+
+        .tab-btn.active .tab-badge {
+            background: var(--azul-medio);
+            color: white;
+        }
+
+        /* ── CONTENIDO TABS ── */
+        .tab-content {
+            display: none;
+            padding: 24px 28px 28px;
+        }
+
+        .tab-content.active { display: block; }
+
+        /* ── TABLA ── */
+        .table-wrapper {
+            border-radius: 12px;
+            border: 1px solid #e2e8f0;
+            overflow: hidden;
+            max-height: 520px;
+            overflow-y: auto;
+            overflow-x: auto;
+        }
+
+        /* Scrollbar estilizado */
+        .table-wrapper::-webkit-scrollbar { width: 6px; height: 6px; }
+        .table-wrapper::-webkit-scrollbar-track { background: #f1f5f9; }
+        .table-wrapper::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 3px; }
+        .table-wrapper::-webkit-scrollbar-thumb:hover { background: var(--azul-medio); }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 12.5px;
+        }
+
+        thead th {
+            background: var(--azul-oscuro);
+            color: white;
+            padding: 11px 12px;
+            text-align: left;
+            font-weight: 700;
+            font-size: 11px;
+            letter-spacing: 0.5px;
+            text-transform: uppercase;
+            position: sticky;
+            top: 0;
+            z-index: 10;
+            white-space: nowrap;
+        }
+
+        tbody td {
+            padding: 9px 12px;
+            border-bottom: 1px solid #f1f5f9;
+            color: #374151;
+            white-space: nowrap;
+        }
+
+        tbody tr:last-child td { border-bottom: none; }
+
+        tbody tr:hover { background: #f8fafc; }
+
+        .empty-row td {
+            text-align: center;
+            color: #94a3b8;
+            padding: 40px;
+            font-style: italic;
+        }
+
+        /* ── BOTÓN DESCARGA ── */
+        .download-bar {
+            padding: 20px 28px;
+            border-top: 1px solid #f1f5f9;
+            display: flex;
+            align-items: center;
+            justify-content: flex-end;
+            gap: 12px;
+        }
+
+        .btn-download {
+            padding: 13px 28px;
+            background: var(--azul-oscuro);
+            color: white;
+            border: none;
+            border-radius: 10px;
+            font-family: 'Nunito Sans', sans-serif;
+            font-weight: 700;
+            font-size: 14px;
+            cursor: pointer;
+            letter-spacing: 0.3px;
+            transition: background 0.25s, transform 0.15s;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .btn-download:hover { background: var(--azul-medio); }
+        .btn-download:active { transform: scale(0.98); }
+
+        /* ── ALERTA ── */
+        #alerta-overlay {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            display: none; justify-content: center; align-items: center;
+            z-index: 10000; background: rgba(22,43,71,0.45);
+            backdrop-filter: blur(4px);
+        }
+
+        .alerta-card {
+            background: white; padding: 35px; width: 320px;
+            border-radius: 24px; text-align: center;
+            box-shadow: 0 20px 50px rgba(0,0,0,0.15);
+            animation: entrada 0.4s ease-out;
+        }
+
+        .alerta-card.error { border-top: 7px solid var(--rojo); }
+        .alerta-card i { font-size: 50px; margin-bottom: 15px; color: var(--rojo); }
+        .alerta-card h3 { font-family: 'Nunito Sans', sans-serif; font-weight: 700; color: var(--azul-oscuro); margin-bottom: 10px; }
+        .alerta-card p { font-size: 14px; color: #64748b; line-height: 1.5; }
+
+        /* ── LOADING OVERLAY ── */
+        #loading-overlay {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            display: none; justify-content: center; align-items: center;
+            z-index: 10000; background: rgba(22,43,71,0.45);
+            backdrop-filter: blur(4px);
+        }
+
+        .loading-card {
+            background: white; padding: 32px 40px;
+            border-radius: 20px; text-align: center;
+            box-shadow: 0 20px 50px rgba(0,0,0,0.15);
+        }
+
+        .loading-card i { font-size: 36px; color: var(--azul-medio); margin-bottom: 12px; display: block; }
+        .loading-card p { font-weight: 700; color: var(--azul-oscuro); font-size: 15px; }
+
+        @keyframes entrada {
+            from { transform: scale(0.7); opacity: 0; }
+            to   { transform: scale(1);   opacity: 1; }
+        }
+
+        @media (max-width: 768px) {
+            main { padding: 20px 14px; }
+            .stats-row { flex-direction: column; }
+            .tabs-bar { padding: 0 14px; }
+            .tab-content { padding: 16px 14px 20px; }
+            .download-bar { padding: 16px 14px; }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- ═══════════════ HEADER ═══════════════ -->
+    <header>
+        <div class="header-logo">
+            <img src="{% static 'img/logo_fondo_oscuro.png' %}" alt="Logo" style="height:80px;">
+            <div class="header-divider"></div>
+            <div class="header-title">
+                CRUCE DE INFORMACIÓN ARL - GRUPO HL
+                <span>Dashboard de Procesamiento</span>
+            </div>
+        </div>
+    </header>
+
+    <!-- ═══════════════ MAIN ═══════════════ -->
+    <main>
+
+        <!-- Stats -->
+        <div class="stats-row">
+            <div class="stat-card">
+                <div class="stat-icon"><i class="fa-solid fa-users"></i></div>
+                <div class="stat-info">
+                    <div class="stat-number">{{ total_trabajadores }}</div>
+                    <div class="stat-label">Trabajadores Vigentes</div>
+                </div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon"><i class="fa-solid fa-id-card"></i></div>
+                <div class="stat-info">
+                    <div class="stat-number">{{ total_empleados }}</div>
+                    <div class="stat-label">Empleados en Reporte</div>
+                </div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon"><i class="fa-solid fa-circle-check"></i></div>
+                <div class="stat-info">
+                    <div class="stat-number" style="color:#10b981;">OK</div>
+                    <div class="stat-label">Archivos Procesados</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Panel con tabs -->
+        <div class="panel">
+
+            <!-- Tabs -->
+            <div class="tabs-bar">
+                <button class="tab-btn active" onclick="switchTab('arl', this)">
+                    <i class="fa-solid fa-table-list"></i>
+                    Cruce ARL
+                    <span class="tab-badge">{{ total_trabajadores }}</span>
+                </button>
+                <button class="tab-btn" onclick="switchTab('emp', this)">
+                    <i class="fa-solid fa-file-lines"></i>
+                    Reporte EMP
+                    <span class="tab-badge">{{ total_empleados }}</span>
+                </button>
+            </div>
+
+            <!-- Tab: Cruce ARL -->
+            <div class="tab-content active" id="tab-arl">
+                <div class="table-wrapper">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Tipo</th>
+                                <th>Identificación</th>
+                                <th>Nombre</th>
+                                <th>Cargo</th>
+                                <th>Inicio Vigencia</th>
+                                <th>EPS</th>
+                                <th>AFP</th>
+                                <th>Salario</th>
+                                <th>Fecha Nac.</th>
+                                <th>Riesgo ARL</th>
+                                <th>C. Costo</th>
+                                <th>Libra</th>
+                                <th>Validación</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for row in cruce_preview %}
+                            <tr>
+                                <td>{{ row.Tipo }}</td>
+                                <td>{{ row.Identificación }}</td>
+                                <td>{{ row.Nombre }}</td>
+                                <td>{{ row.Cargo }}</td>
+                                <td>{{ row.Inicio_Vigencia }}</td>
+                                <td>{{ row.EPS }}</td>
+                                <td>{{ row.AFP }}</td>
+                                <td>{{ row.Salario }}</td>
+                                <td>{{ row.Fecha_Nac }}</td>
+                                <td>{{ row.RIESGO_EN_ARL }}</td>
+                                <td>{{ row.C_COSTO }}</td>
+                                <td>{{ row.LIBRA }}</td>
+                                <td>{{ row.VALIDACION }}</td>
+                            </tr>
+                            {% empty %}
+                            <tr class="empty-row"><td colspan="13">No hay datos para mostrar</td></tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Tab: Reporte EMP -->
+            <div class="tab-content" id="tab-emp">
+                <div class="table-wrapper">
+                    <table>
+                        <thead>
+                            <tr>
+                                {% for col in emp_cols %}
+                                    <th>{{ col }}</th>
+                                {% endfor %}
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for row in emp_preview %}
+                            <tr>
+                                {% for col in emp_cols %}
+                                    <td>
+                                        {% for key, value in row.items %}
+                                            {% if key == col %}{{ value }}{% endif %}
+                                        {% endfor %}
+                                    </td>
+                                {% endfor %}
+                            </tr>
+                            {% empty %}
+                            <tr class="empty-row"><td colspan="{{ emp_cols|length }}">No hay datos para mostrar</td></tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Barra de descarga -->
+            <div class="download-bar">
+                <button class="btn-download" onclick="downloadInfra()">
+                    <i class="fa-solid fa-download"></i>
+                    Descargar INFRA Actualizado
+                </button>
+            </div>
+
+        </div>
+    </main>
+
+    <!-- ═══════════════ LOADING ═══════════════ -->
+    <div id="loading-overlay">
+        <div class="loading-card">
+            <i class="fa-solid fa-spinner fa-spin"></i>
+            <p>Generando archivo… Por favor espere</p>
+        </div>
+    </div>
+
+    <!-- ═══════════════ ALERTA ═══════════════ -->
+    <div id="alerta-overlay"><div id="alerta-content"></div></div>
+
+    <script>
+        // ── Cambio de tabs ──
+        function switchTab(tabId, btn) {
+            document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
+            document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+            document.getElementById('tab-' + tabId).classList.add('active');
+            btn.classList.add('active');
+        }
+
+        // ── Descarga ──
+        function downloadInfra() {
+            const loadingOverlay = document.getElementById('loading-overlay');
+            loadingOverlay.style.display = 'flex';
+
+            fetch('/download-infra/', {
+                method: 'POST',
+                headers: {
+                    'X-CSRFToken': getCookie('csrftoken'),
+                    'Content-Type': 'application/json',
+                },
+            })
+            .then(response => {
+                if (!response.ok) return response.json().then(err => { throw err; });
+                return response.blob();
+            })
+            .then(blob => {
+                const url = window.URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = 'INFRA_Cruce_ARL_actualizado.xlsx';
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                window.URL.revokeObjectURL(url);
+                loadingOverlay.style.display = 'none';
+            })
+            .catch(error => {
+                loadingOverlay.style.display = 'none';
+                lanzarAlerta(error.error || 'Error al generar el archivo. Por favor intente nuevamente.');
+            });
+        }
+
+        function getCookie(name) {
+            let cookieValue = null;
+            if (document.cookie && document.cookie !== '') {
+                const cookies = document.cookie.split(';');
+                for (let i = 0; i < cookies.length; i++) {
+                    const cookie = cookies[i].trim();
+                    if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                        cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                        break;
+                    }
+                }
+            }
+            return cookieValue;
+        }
+
+        function lanzarAlerta(mensaje) {
+            const overlay = document.getElementById('alerta-overlay');
+            document.getElementById('alerta-content').innerHTML = `
+                <div class="alerta-card error">
+                    <i class="fa-solid fa-circle-xmark"></i>
+                    <h3>Atención</h3>
+                    <p>${mensaje}</p>
+                </div>`;
+            overlay.style.display = 'flex';
+            overlay.onclick = () => overlay.style.display = 'none';
+        }
+    </script>
+</body>
+</html>
