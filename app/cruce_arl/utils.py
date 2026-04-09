@@ -2,14 +2,13 @@ import json
 import io
 import re
 import copy
+import tempfile
+import os
 import pandas as pd
 from openpyxl import load_workbook
 from openpyxl.styles import Font, Alignment, Border, Side, PatternFill
 from openpyxl.styles.differential import DifferentialStyle
 from openpyxl.formatting.rule import Rule
-from django.shortcuts import render
-from django.http import HttpResponse, JsonResponse
-from django.views.decorators.http import require_POST
 
 
 # ------------------------------------------------------------
@@ -224,7 +223,6 @@ def format_codigo_emp(val) -> str:
 # 4.1 Helpers de formato de celdas
 # ------------------------------------------------------------
 def _copy_cell_format(src_cell, dst_cell):
-    """Copia font, alignment, number_format y border de src a dst."""
     if src_cell.font:
         dst_cell.font = copy.copy(src_cell.font)
     if src_cell.alignment:
@@ -299,7 +297,6 @@ def _fill_cruce_sheet(wb, df_trab: pd.DataFrame, rep_dict: dict):
 
     total = len(df_trab)
 
-    # ── Capturar formatos y fórmulas de referencia UNA sola vez (fuera del loop) ──
     ref_fonts      = {}
     ref_alignments = {}
     ref_numfmts    = {}
@@ -316,7 +313,6 @@ def _fill_cruce_sheet(wb, df_trab: pd.DataFrame, rep_dict: dict):
         if c in (11, 12, 13) and src.value and str(src.value).startswith("="):
             ref_formulas[c] = str(src.value)
 
-    # ── Compilar patrón regex una sola vez (fuera del loop) ──
     _re_row2 = re.compile(r"([A-Z]+)2\b")
 
     records = df_trab.reset_index(drop=True)
@@ -325,7 +321,6 @@ def _fill_cruce_sheet(wb, df_trab: pd.DataFrame, rep_dict: dict):
         excel_row = DATA_START + i
         row = records.iloc[i]
 
-        # Aplicar formatos copiados sin llamar copy.copy en cada iteración
         for c in range(1, MAX_DATA_COL + 1):
             cell = ws.cell(row=excel_row, column=c)
             if ref_fonts[c]:      cell.font      = ref_fonts[c]
@@ -333,7 +328,6 @@ def _fill_cruce_sheet(wb, df_trab: pd.DataFrame, rep_dict: dict):
             if ref_numfmts[c]:    cell.number_format = ref_numfmts[c]
             cell.border = _thin_border
 
-        # Escribir valores de datos
         for field, col in col_index.items():
             val = row.get(field, "")
             cell = ws.cell(row=excel_row, column=col)
@@ -348,21 +342,18 @@ def _fill_cruce_sheet(wb, df_trab: pd.DataFrame, rep_dict: dict):
             else:
                 cell.value = val if val else None
 
-        # Extender fórmulas K, L, M con patrón pre-compilado
         for col_idx, formula in ref_formulas.items():
             cell = ws.cell(row=excel_row, column=col_idx)
             existing = cell.value
             if not existing or not str(existing).startswith("="):
                 cell.value = _re_row2.sub(lambda m: f"{m.group(1)}{excel_row}", formula)
 
-    # Limpiar filas sobrantes
     for r in range(DATA_START + total, ws.max_row + 1):
         for c in range(1, MAX_DATA_COL + 1):
             cell = ws.cell(row=r, column=c)
             cell.value = None
             cell.fill = PatternFill(fill_type=None)
 
-    # Formato condicional verde en VALIDACION (col M)
     last_data_row = DATA_START + total - 1
     validacion_range = f"M{DATA_START}:M{last_data_row}"
     green_fill = PatternFill(patternType=None, fgColor="00000000", bgColor="C6EFCE")
@@ -372,6 +363,8 @@ def _fill_cruce_sheet(wb, df_trab: pd.DataFrame, rep_dict: dict):
     rule_ok.formula = [f'NOT(ISERROR(SEARCH("OK",M{DATA_START})))']
     ws.conditional_formatting._cf_rules.clear()
     ws.conditional_formatting.add(validacion_range, rule_ok)
+
+    print(f"Cruce ARL actualizado: {total} filas, CF verde en {validacion_range}")
 
 
 # ------------------------------------------------------------
@@ -397,7 +390,6 @@ def _fill_emp_sheet(wb, df_rep: pd.DataFrame, trab_dict: dict):
 
     MAX_DATA_COL = max(col_name_to_idx.values()) if col_name_to_idx else 140
 
-    # ── Capturar formatos y fórmulas de referencia UNA sola vez (fuera del loop) ──
     ref_fonts      = {}
     ref_alignments = {}
     ref_numfmts    = {}
@@ -421,7 +413,6 @@ def _fill_emp_sheet(wb, df_rep: pd.DataFrame, trab_dict: dict):
         if src.value and str(src.value).startswith("="):
             formula_cols[c] = str(src.value)
 
-    # Mapeo reporte → columna EMP calculado UNA sola vez (fuera del loop)
     reporte_to_emp: dict[str, int] = {}
     for col in df_rep.columns:
         col_norm = col.strip()
@@ -435,7 +426,6 @@ def _fill_emp_sheet(wb, df_rep: pd.DataFrame, trab_dict: dict):
 
     skip_cols = set(formula_cols.keys()) | {94}
 
-    # ── Compilar patrón regex una sola vez (fuera del loop) ──
     _re_row2 = re.compile(r"([A-Z]+)2\b")
 
     n_rows = len(df_rep)
@@ -445,7 +435,6 @@ def _fill_emp_sheet(wb, df_rep: pd.DataFrame, trab_dict: dict):
         excel_row = DATA_START + i
         rep_row = records.iloc[i]
 
-        # Aplicar formatos (solo para filas nuevas, no la de referencia)
         if excel_row != DATA_START:
             for c in range(1, MAX_DATA_COL + 1):
                 cell = ws.cell(row=excel_row, column=c)
@@ -454,7 +443,6 @@ def _fill_emp_sheet(wb, df_rep: pd.DataFrame, trab_dict: dict):
                 if ref_numfmts[c]:    cell.number_format = ref_numfmts[c]
                 cell.border = ref_borders_lr[c]
 
-        # Escribir datos del reporte
         for rep_col, col_idx in reporte_to_emp.items():
             if col_idx in skip_cols:
                 continue
@@ -464,7 +452,6 @@ def _fill_emp_sheet(wb, df_rep: pd.DataFrame, trab_dict: dict):
             val = rep_row.get(rep_col)
             cell.value = val if not pd.isna(val) else None
 
-        # C.COSTO desde "CCF"
         if col_c_costo is not None:
             ccf_val = rep_row.get("CCF", "")
             if ccf_val and str(ccf_val) not in ("nan", "None", ""):
@@ -472,24 +459,20 @@ def _fill_emp_sheet(wb, df_rep: pd.DataFrame, trab_dict: dict):
                 cell.value = str(ccf_val)
                 cell.number_format = "@"
 
-        # Código (columna B)
         codigo_val = rep_row.get("Código", "")
         if codigo_val and str(codigo_val) not in ("nan", "None", ""):
             cell = ws.cell(row=excel_row, column=2)
             cell.value = format_codigo_emp(codigo_val)
             cell.number_format = "@"
 
-        # NIVEL ARL formateado
         nivel_arl = format_nivel_arl(rep_row.get("NIVEL ARL", ""))
         ws.cell(row=excel_row, column=94).value = nivel_arl
 
-        # Propagar fórmulas con patrón pre-compilado
         for col_idx, ref_formula in formula_cols.items():
             cell = ws.cell(row=excel_row, column=col_idx)
             if not cell.value or not str(cell.value).startswith("="):
                 cell.value = _re_row2.sub(lambda m: f"{m.group(1)}{excel_row}", ref_formula)
 
-    # Formato condicional verde en VALIDACION
     if col_validacion:
         last_data_row = DATA_START + n_rows - 1
         val_col_letter = get_column_letter(col_validacion)
@@ -501,3 +484,62 @@ def _fill_emp_sheet(wb, df_rep: pd.DataFrame, trab_dict: dict):
         rule_ok.formula = [f'NOT(ISERROR(SEARCH("OK",{val_col_letter}{DATA_START})))']
         ws.conditional_formatting._cf_rules.clear()
         ws.conditional_formatting.add(val_range, rule_ok)
+        print(f"EMP actualizada: {n_rows} filas, CF verde en {val_range}")
+    else:
+        print(f"EMP actualizada: {n_rows} filas (columna VALIDACION no encontrada)")
+
+
+# ------------------------------------------------------------
+# 6. Gestión de estado sin base de datos
+#    Se usa un archivo temporal por "sesión" (token en cookie)
+# ------------------------------------------------------------
+_TEMP_DIR = tempfile.gettempdir()
+_TOKEN_COOKIE = "infra_token"
+
+
+def _state_path(token: str) -> str:
+    safe = re.sub(r"[^a-zA-Z0-9_-]", "", token)
+    return os.path.join(_TEMP_DIR, f"infra_state_{safe}.json")
+
+
+def _infra_path(token: str) -> str:
+    safe = re.sub(r"[^a-zA-Z0-9_-]", "", token)
+    return os.path.join(_TEMP_DIR, f"infra_bytes_{safe}.bin")
+
+
+def save_state(token: str, df_rep: pd.DataFrame, df_trab: pd.DataFrame, infra_bytes: bytes):
+    """Guarda DataFrames como JSON y los bytes del INFRA en disco temporal."""
+    state = {
+        "reporte_json": df_rep.to_json(orient="records", date_format="iso", default_handler=str),
+        "trabajadores_json": df_trab.to_json(orient="records", date_format="iso", default_handler=str),
+    }
+    with open(_state_path(token), "w", encoding="utf-8") as f:
+        json.dump(state, f)
+    with open(_infra_path(token), "wb") as f:
+        f.write(infra_bytes)
+
+
+def load_state(token: str):
+    """Devuelve (df_rep, df_trab, infra_bytes) o lanza FileNotFoundError."""
+    sp = _state_path(token)
+    ip = _infra_path(token)
+    if not os.path.exists(sp) or not os.path.exists(ip):
+        raise FileNotFoundError("Archivos temporales no encontrados")
+
+    with open(sp, "r", encoding="utf-8") as f:
+        state = json.load(f)
+    with open(ip, "rb") as f:
+        infra_bytes = f.read()
+
+    df_rep  = pd.read_json(io.StringIO(state["reporte_json"]),  orient="records")
+    df_trab = pd.read_json(io.StringIO(state["trabajadores_json"]), orient="records")
+    return df_rep, df_trab, infra_bytes
+
+
+def delete_state(token: str):
+    """Elimina los archivos temporales de una sesión."""
+    for path in (_state_path(token), _infra_path(token)):
+        try:
+            os.remove(path)
+        except OSError:
+            pass
